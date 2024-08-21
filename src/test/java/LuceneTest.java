@@ -1,9 +1,12 @@
 import com.xlm.entity.Sku;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.document.*;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FloatPoint;
+import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
@@ -11,11 +14,13 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.junit.Test;
 import org.wltea.analyzer.lucene.IKAnalyzer;
@@ -113,5 +118,98 @@ public class LuceneTest {
         reader.close();
     }
 
+
+    @Test
+    public void testIndexTest() throws Exception {
+        Analyzer analyzer = new IKAnalyzer();
+        Directory directory = FSDirectory.open(Paths.get("./indexDir"));
+        IndexWriterConfig config = new IndexWriterConfig(analyzer);
+        IndexWriter indexWriter = new IndexWriter(directory, config);
+        Document document = new Document();
+        document.add(new IntPoint("price", 100));
+        document.add(new StoredField("price", 100));
+        document.add(new StringField("brandName", "华为", Field.Store.YES));
+        document.add(new StringField("id", "1", Field.Store.YES));
+
+        indexWriter.updateDocument(new Term("id", "SKU6"), document);
+        indexWriter.close();
+    }
+
+
+    @Test
+    public void testIndexDelete() throws Exception {
+        Analyzer analyzer = new IKAnalyzer();
+        Directory directory = FSDirectory.open(Paths.get("./indexDir"));
+        IndexWriterConfig config = new IndexWriterConfig(analyzer);
+        IndexWriter indexWriter = new IndexWriter(directory, config);
+        indexWriter.deleteDocuments(new Term("id", "1"));
+        indexWriter.close();
+    }
+
+    @Test
+    public void TestWhitespaceAnalyzer() throws Exception {
+
+        // 1. 创建分词器,分析文档,对文档进行分词
+        Analyzer analyzer = new WhitespaceAnalyzer();
+        // 2. 创建Directory对象,声明索引库的位置
+        Directory directory = FSDirectory.open(Paths.get("./indexDir"));
+        // 3. 创建IndexWriteConfig对象,写入索引需要的配置
+        IndexWriterConfig config = new IndexWriterConfig(analyzer);
+        // 4.创建IndexWriter写入对象
+        IndexWriter indexWriter = new IndexWriter(directory, config);
+        // 5.写入到索引库,通过IndexWriter添加文档对象document
+        Document doc = new Document();
+        doc.add(new TextField("name", "vivo X23 8GB+128GB 幻夜蓝", Field.Store.YES));
+        indexWriter.addDocument(doc);
+        // 6.释放资源
+        indexWriter.close();
+    }
+
+
+    @Test
+    public void TestSimpleAnalyzer() throws Exception {
+
+        // 1. 创建分词器,分析⽂档，对⽂档进⾏分词
+        Analyzer analyzer = new SimpleAnalyzer();
+
+        // 2. 创建Directory对象,声明索引库的位置
+        Directory directory = FSDirectory.open(Paths.get("./indexDir"));
+
+        // 3. 创建IndexWriteConfig对象，写⼊索引需要的配置
+        IndexWriterConfig config = new IndexWriterConfig(analyzer);
+
+        // 4.创建IndexWriter写⼊对象
+        IndexWriter indexWriter = new IndexWriter(directory, config);
+
+        // 5.写⼊到索引库，通过IndexWriter添加⽂档对象document
+        Document doc = new Document();
+        doc.add(new TextField("name", "vivo，X23。 8GB+128GB； 幻夜蓝", Field.Store.YES));
+        indexWriter.addDocument(doc);
+
+        // 6.释放资源
+        indexWriter.close();
+    }
+
+    @Test
+    public void TestIKAnalyzer() throws Exception {
+
+        // 1. 创建分词器,分析⽂档，对⽂档进⾏分词
+        Analyzer analyzer = new IKAnalyzer();
+        // 2. 创建Directory对象,声明索引库的位置
+        Directory directory = FSDirectory.open(Paths.get("./indexDir"));
+        // 3. 创建IndexWriteConfig对象，写⼊索引需要的配置
+        IndexWriterConfig config = new IndexWriterConfig(analyzer);
+        // 4.创建IndexWriter写⼊对象
+        IndexWriter indexWriter = new IndexWriter(directory, config);
+
+        // 5.写⼊到索引库，通过IndexWriter添加⽂档对象document
+        Document doc = new Document();
+        doc.add(new TextField("name", "vivo X23 8GB+128GB 幻夜蓝,⽔滴屏全⾯屏, 游戏⼿机.移动联通电信全⽹通4G⼿机", Field.Store.YES));
+        indexWriter.addDocument(doc);
+
+        // 6.释放资源
+        indexWriter.close();
+
+    }
 
 }
